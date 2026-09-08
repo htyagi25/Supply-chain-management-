@@ -128,3 +128,25 @@ inputs independently of the charting code.
 ├── README.md
 └── output/          (generated on run)
 ```
+Week 3: Process Mapping and Visualization
+Draws the six-stage, code-generated supply chain process map (Demand
+Planning → Procurement → Inventory Management → Order Fulfillment →
+Distribution & Transportation → Customer Delivery), paired with a "Data &
+Analytics Layer" showing which Week 2 KPI monitors each stage.
+```bash
+python process_map.py
+```
+Output: `./output/supply_chain_process_map.png`
+Stages are defined once as a list of `(title, role, kpi)` tuples at the top
+of the file — edit that list to add, remove, or relabel a stage and the
+diagram regenerates from the same source of truth used in the report.
+Repo structure
+```
+.
+├── supply_chain_analysis.py   (Week 1)
+├── kpi_analysis.py            (Week 2)
+├── process_map.py             (Week 3)
+├── requirements.txt
+├── README.md
+└── output/                    (generated on run)
+```
