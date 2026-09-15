@@ -150,3 +150,40 @@ Repo structure
 ├── README.md
 └── output/                    (generated on run)
 ```
+## Week 4: Predictive Analytics for Demand Forecasting
+ 
+Generates a 36-month pseudo-data demand series and fits/compares two
+forecasting methods: Holt-Winters Triple Exponential Smoothing and a
+linear regression with an exogenous market-pressure index. Includes a
+fully independent, hand-verifiable manual walkthrough of the Holt-Winters
+level/trend/seasonal updates for three periods.
+ 
+```bash
+python demand_forecasting.py      # both forecasting methods + charts
+python conceptual_model.py        # the conceptual model diagram
+```
+ 
+Outputs (`./output/`):
+ 
+- `demand_pseudo_data.csv` — the full 36-month synthetic series
+- `holt_winters_forecast.png`, `regression_fit.png` — fit/forecast charts
+- `conceptual_model.png` — the input → forecasting engine → planning diagram
+Console output includes fitted parameters, the manual Holt-Winters
+walkthrough, regression coefficients, and held-out MAPE for both methods
+(9.8% vs. 1.4% in the report's pseudo-data example) — all numbers quoted
+in the Week 4 report are reproduced exactly by running this script.
+ 
+## Repo structure
+ 
+```
+.
+├── supply_chain_analysis.py   (Week 1)
+├── kpi_analysis.py            (Week 2)
+├── process_map.py             (Week 3)
+├── demand_forecasting.py      (Week 4)
+├── conceptual_model.py        (Week 4)
+├── requirements.txt
+├── README.md
+└── output/                    (generated on run)
+```
+ 
