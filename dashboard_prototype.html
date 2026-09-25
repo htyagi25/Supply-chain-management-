@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Supply Chain Performance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --navy:#1F4E79; --red:#C0392B; --amber:#D68910; --green:#2E7D46;
+    --bg:#F4F6F9; --card:#FFFFFF; --text:#1a1a1a; --muted:#595959; --border:#E2E6EC;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#12161c; --card:#1c2430; --text:#e8ecf1; --muted:#a3adba; --border:#2c3644; }
+  }
+  :root[data-theme="dark"] { --bg:#12161c; --card:#1c2430; --text:#e8ecf1; --muted:#a3adba; --border:#2c3644; }
+  html { scroll-padding-top: env(safe-area-inset-top,0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    padding:16px; max-width:1200px; margin:0 auto;
+  }
+  header h1 { color:var(--navy); font-size:1.4rem; margin:8px 0 2px; }
+  header p { color:var(--muted); font-size:0.85rem; margin:0 0 16px; }
+  .kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:18px; }
+  .kpi-card { background:var(--card); border:1px solid var(--border); border-top:4px solid var(--status);
+    border-radius:8px; padding:10px 8px; text-align:center; }
+  .kpi-card .val { font-size:1.35rem; font-weight:700; color:var(--navy); }
+  .kpi-card .lbl { font-size:0.72rem; font-weight:600; margin-top:2px; }
+  .kpi-card .delta { font-size:0.65rem; color:var(--status); margin-top:2px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px; }
+  @media (max-width:700px) { .grid2 { grid-template-columns:1fr; } }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:12px; overflow-x:auto; }
+  .panel h2 { font-size:0.9rem; color:var(--navy); margin:0 0 8px; }
+  .stage-row { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-bottom:18px; }
+  @media (max-width:700px) { .stage-row { grid-template-columns:repeat(2,1fr); } }
+  .stage { background:var(--card); border:2px solid var(--status); border-radius:8px; padding:10px 6px;
+    text-align:center; font-size:0.72rem; font-weight:600; position:relative; }
+  .stage .dot { width:9px; height:9px; border-radius:50%; background:var(--status); position:absolute; top:6px; right:6px; }
+  table { width:100%; border-collapse:collapse; font-size:0.78rem; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
+  th { background:var(--navy); color:white; cursor:pointer; user-select:none; }
+  tr.breach { background:rgba(192,57,43,0.08); }
+  .filter-bar { margin-bottom:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .filter-bar input { flex:1; min-width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:6px;
+    background:var(--bg); color:var(--text); font-size:0.8rem; }
+  .filter-bar label { font-size:0.75rem; color:var(--muted); display:flex; align-items:center; gap:4px; }
+  canvas { max-height:230px; }
+  footer { text-align:center; color:var(--muted); font-size:0.7rem; margin:20px 0 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Supply Chain Performance Dashboard</h1>
+  <p>Week ending Apr 30, 2026 &nbsp;|&nbsp; Data: Weeks 1&ndash;4 (GSCPI, KPI definitions, process map, forecast models) &nbsp;|&nbsp; Prototype for stakeholder review</p>
+</header>
+
+<div class="kpi-row" id="kpiRow"></div>
+
+<div class="grid2">
+  <div class="panel"><h2>External Market Pressure (GSCPI) &mdash; Week 1</h2><canvas id="gscpiChart"></canvas></div>
+  <div class="panel"><h2>Demand Forecast: Actual vs. Model &mdash; Week 4</h2><canvas id="forecastChart"></canvas></div>
+</div>
+
+<div class="panel" style="margin-bottom:18px;">
+  <h2>Process Health by Stage &mdash; Week 3</h2>
+  <div class="stage-row" id="stageRow"></div>
+</div>
+
+<div class="grid2">
+  <div class="panel">
+    <h2>Exception Report (below threshold)</h2>
+    <div class="filter-bar">
+      <input type="text" id="filterInput" placeholder="Filter by lane, SKU, DC, or KPI...">
+      <label><input type="checkbox" id="breachOnly" checked> Breaches only</label>
+    </div>
+    <table id="excTable">
+      <thead><tr><th data-k="loc">Lane / SKU / DC</th><th data-k="kpi">KPI</th><th data-k="value">Value</th><th data-k="threshold">Threshold</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="panel"><h2>Perfect Order Rate Drivers &mdash; Week 2</h2><canvas id="porChart"></canvas></div>
+</div>
+
+<footer>Prototype dashboard &middot; static illustrative data from Weeks 1&ndash;4 &middot; not connected to live systems</footer>
+
+<script>
+const NAVY = "#1F4E79", RED = "#C0392B", AMBER = "#D68910", GREEN = "#2E7D46";
+
+const kpis = [
+  { lbl: "On-Time In-Full", val: "90.0%", delta: "↓ 6.0 pts vs target 96%", status: RED },
+  { lbl: "Perfect Order Rate", val: "83.1%", delta: "compounded from 4 sub-rates", status: AMBER },
+  { lbl: "Inventory Turnover", val: "6.0x", delta: "↓ from 8.0x baseline", status: RED },
+  { lbl: "Fill Rate", val: "84%", delta: "below 96–99% benchmark", status: AMBER },
+  { lbl: "Cash-to-Cash Cycle", val: "42 days", delta: "target 31 days", status: AMBER },
+  { lbl: "Freight Cost / Unit", val: "$5.10", delta: "↑ $0.90 vs last period", status: RED },
+];
+document.getElementById("kpiRow").innerHTML = kpis.map(k =>
+  `<div class="kpi-card" style="--status:${k.status}">
+     <div class="val">${k.val}</div><div class="lbl">${k.lbl}</div><div class="delta">${k.delta}</div>
+   </div>`).join("");
+
+const stages = [
+  { name: "Demand Planning", status: GREEN }, { name: "Procurement", status: AMBER },
+  { name: "Inventory Management", status: RED }, { name: "Order Fulfillment", status: AMBER },
+  { name: "Distribution & Transportation", status: RED }, { name: "Customer Delivery", status: AMBER },
+];
+document.getElementById("stageRow").innerHTML = stages.map(s =>
+  `<div class="stage" style="--status:${s.status}"><span class="dot"></span>${s.name}</div>`).join("");
+
+const exceptions = [
+  { loc: "Lane: MW→NE", kpi: "OTIF", value: "88.2%", threshold: "< 92%" },
+  { loc: "SKU: WB-2201", kpi: "Fill Rate", value: "76%", threshold: "< 90%" },
+  { loc: "Lane: Import-EU", kpi: "Freight $/Unit", value: "$6.40", threshold: "> $5.50" },
+  { loc: "DC: Regional-3", kpi: "Inventory Turns", value: "5.1x", threshold: "< 6.0x" },
+  { loc: "Lane: SE-Hub", kpi: "OTIF", value: "94.1%", threshold: "< 92%" },
+  { loc: "SKU: WB-1187", kpi: "Fill Rate", value: "93%", threshold: "< 90%" },
+];
+function renderTable() {
+  const q = document.getElementById("filterInput").value.toLowerCase();
+  const breachOnly = document.getElementById("breachOnly").checked;
+  const tbody = document.querySelector("#excTable tbody");
+  const rows = exceptions.filter(r => {
+    const matchesQ = !q || Object.values(r).some(v => String(v).toLowerCase().includes(q));
+    const isBreach = r.threshold.startsWith("<") ? parseFloat(r.value) < parseFloat(r.threshold.replace(/[^0-9.]/g,""))
+                     : parseFloat(r.value.replace(/[^0-9.]/g,"")) > parseFloat(r.threshold.replace(/[^0-9.]/g,""));
+    return matchesQ && (!breachOnly || isBreach);
+  });
+  tbody.innerHTML = rows.map(r => {
+    const isBreach = r.threshold.startsWith("<") ? parseFloat(r.value) < parseFloat(r.threshold.replace(/[^0-9.]/g,""))
+                     : parseFloat(r.value.replace(/[^0-9.]/g,"")) > parseFloat(r.threshold.replace(/[^0-9.]/g,""));
+    return `<tr class="${isBreach ? 'breach' : ''}"><td>${r.loc}</td><td>${r.kpi}</td><td>${r.value}</td><td>${r.threshold}</td></tr>`;
+  }).join("") || '<tr><td colspan="4" style="text-align:center;color:var(--muted);">No matching rows</td></tr>';
+}
+document.getElementById("filterInput").addEventListener("input", renderTable);
+document.getElementById("breachOnly").addEventListener("change", renderTable);
+renderTable();
+
+try {
+  const commonOpts = { responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:{ font:{ size:10 } } } },
+    scales:{ x:{ ticks:{ font:{ size:9 } } }, y:{ ticks:{ font:{ size:9 } } } } };
+
+  new Chart(document.getElementById("gscpiChart"), {
+    type: "line",
+    data: { labels: ["Jan 2026","Feb 2026","Mar 2026","Apr 2026"],
+      datasets: [{ label:"GSCPI", data:[0.41,0.55,0.68,1.82], borderColor:NAVY,
+        backgroundColor:NAVY, tension:0.15, pointRadius:4 }] },
+    options: commonOpts
+  });
+
+  new Chart(document.getElementById("forecastChart"), {
+    type: "line",
+    data: { labels: ["M33","M34","M35","M36"],
+      datasets: [
+        { label:"Actual", data:[1500,1289,1207,1271], borderColor:NAVY, backgroundColor:NAVY, pointRadius:4 },
+        { label:"Holt-Winters (9.8% MAPE)", data:[1594,1392,1355,1432], borderColor:RED, backgroundColor:RED, borderDash:[5,3], pointRadius:3 },
+        { label:"Regression (1.4% MAPE)", data:[1483,1273,1191,1294], borderColor:GREEN, backgroundColor:GREEN, borderDash:[5,3], pointRadius:3 },
+      ] },
+    options: commonOpts
+  });
+
+  new Chart(document.getElementById("porChart"), {
+    type: "bar",
+    data: { labels: ["On-time","In-full","Damage-free","Accurate docs","Perfect Order"],
+      datasets: [{ label:"Rate (%)", data:[92,95,97,98,83.1],
+        backgroundColor:[NAVY,NAVY,NAVY,NAVY,RED] }] },
+    options: { ...commonOpts, plugins:{ legend:{ display:false } } }
+  });
+} catch (e) { console.error("Chart render error:", e); }
+</script>
+</body>
+</html>
