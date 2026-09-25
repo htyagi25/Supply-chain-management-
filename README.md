@@ -186,4 +186,38 @@ in the Week 4 report are reproduced exactly by running this script.
 ├── README.md
 └── output/                    (generated on run)
 ```
+ ## Week 5: Development of Data Dashboards and Reporting
+ 
+A capstone dashboard populated with the real figures from Weeks 1–4
+(GSCPI, KPIs, process map, forecast comparison) — built in two stages,
+plus a working interactive HTML prototype.
+ 
+```bash
+python wireframe.py           # low-fidelity layout sketch
+python dashboard_mockup.py    # high-fidelity mock-up with real data
+```
+ 
+Outputs (`./output/`): `wireframe.png`, `dashboard_mockup.png`
+ 
+`dashboard_prototype.html` is a self-contained, working interactive
+dashboard (Chart.js via CDN, no build step) — open it directly in a
+browser. It reuses the exact same KPI/GSCPI/forecast figures as the
+static mock-up, plus a live filterable exception table.
+ 
+## Repo structure
+ 
+```
+.
+├── supply_chain_analysis.py   (Week 1)
+├── kpi_analysis.py            (Week 2)
+├── process_map.py             (Week 3)
+├── demand_forecasting.py      (Week 4)
+├── conceptual_model.py        (Week 4)
+├── wireframe.py                (Week 5)
+├── dashboard_mockup.py         (Week 5)
+├── dashboard_prototype.html    (Week 5, open directly in a browser)
+├── requirements.txt
+├── README.md
+└── output/                    (generated on run)
+```
  
