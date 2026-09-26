@@ -220,4 +220,47 @@ static mock-up, plus a live filterable exception table.
 ├── README.md
 └── output/                    (generated on run)
 ```
+ ## Week 6: Performance Evaluation and Improvement Recommendations
+ 
+The capstone evaluation: consolidates every KPI and indicator from Weeks
+1–5 into one normalized scorecard, recomputes two capstone-level figures
+(the compound OTIF → Perfect Order Rate effect, and annualized dollar
+impact of the Week 4 safety-stock finding), and scores six strategic
+recommendations on an impact-vs-effort matrix.
+ 
+```bash
+python performance_evaluation.py
+```
+ 
+Outputs (`./output/`): `kpi_scorecard.png`, `impact_effort_matrix.png`
+ 
+Console output reproduces every number quoted in the Week 6 report
+exactly — the Perfect Order Rate improvement (81.3% → 86.7%), the
+$27,240/year safety-stock saving, and the $540,000/year freight-cost
+figure all print directly from this script.
+ 
+## Repo structure
+ 
+```
+.
+├── supply_chain_analysis.py    (Week 1)
+├── kpi_analysis.py             (Week 2)
+├── process_map.py              (Week 3)
+├── demand_forecasting.py       (Week 4)
+├── conceptual_model.py         (Week 4)
+├── wireframe.py                 (Week 5)
+├── dashboard_mockup.py          (Week 5)
+├── dashboard_prototype.html     (Week 5, open directly in a browser)
+├── performance_evaluation.py    (Week 6)
+├── requirements.txt
+├── README.md
+└── output/                     (generated on run)
+```
+ 
+## Running everything
+ 
+Each script writes to its own `./output/` folder and can be run
+independently and in any order — later weeks reuse *figures* from
+earlier weeks (hardcoded with a comment noting the source), not their
+output files, so there is no required run order.
  
